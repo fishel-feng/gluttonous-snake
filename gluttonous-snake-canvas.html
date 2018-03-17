@@ -142,7 +142,7 @@
       clearInterval(timer);
       timer = setInterval(function () {
         move();
-      }, 100);
+      }, 300);
       btnPause.innerText = '暂停';
       isPaused = false;
     }
@@ -151,26 +151,14 @@
   function drawSnake() {
     context.clearRect(0, 0, BLOCK_SIZE * COLS, BLOCK_SIZE * ROWS);
     for (var i = 0; i < snake.length; i++) {
-      context.beginPath();
       context.fillStyle = 'red';
       context.fillRect(snake[i].x, snake[i].y, BLOCK_SIZE, BLOCK_SIZE);
-      context.moveTo(snake[i].x, snake[i].y);
-      context.lineTo(snake[i].x + BLOCK_SIZE, snake[i].y);
-      context.lineTo(snake[i].x + BLOCK_SIZE, snake[i].y + BLOCK_SIZE);
-      context.lineTo(snake[i].x, snake[i].y + BLOCK_SIZE);
-      context.closePath();
     }
   }
 
   function drawFood() {
-    context.beginPath();
     context.fillStyle = 'blue';
     context.fillRect(foodX, foodY, BLOCK_SIZE, BLOCK_SIZE);
-    context.moveTo(foodX, foodY);
-    context.lineTo(foodX + BLOCK_SIZE, foodY);
-    context.lineTo(foodX + BLOCK_SIZE, foodY + BLOCK_SIZE);
-    context.lineTo(foodX, foodY + BLOCK_SIZE);
-    context.closePath();
   }
 
   function move() {
