@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>贪吃蛇</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      width: 1000px;
+      height: 550px;
+      border: 1px solid #000;
+      /*css3实现水平垂直居中*/
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .ground {
+      width: 1000px;
+      height: 500px;
+      background: #ccc;
+      position: relative;
+    }
+
+    .game-control {
+      width: 1000px;
+      height: 50px;
+      line-height: 50px;
+      box-sizing: border-box;
+      padding: 0 50px;
+    }
+
+    .hint {
+      float: left;
+    }
+
+    #score-hint {
+      margin: 0 20px;
+      display: none;
+    }
+
+    .game-buttons {
+      float: right;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="ground">
+    <canvas id="canvas" height="500px" width="1000px"></canvas>
+  </div>
+  <div class="game-control">
+    <div class="hint">
+      canvas 贪吃蛇 By FX <span id="score-hint">当前得分：<span id="score">0</span></span>
+    </div>
+    <div class="game-buttons">
+      <button id="game-start">开始</button>
+      <button id="game-pause">暂停</button>
+    </div>
+  </div>
+</div>
+<script>
+  var BLOCK_SIZE = 20; // 格子大小
+  var COLS = 50; // 列数
+  var ROWS = 25; // 行数
+  var snake = []; // 保存蛇坐标
+  var context = null; // 绘图对象
+  var dir = 'right'; // 行进方向
+  var snakeCount = 3;
+  var timer = null;
+  var foodX = 0;
+  var foodY = 0;
+  var scoreEle = null;
+  var isClicked = false;
+  var btnStart = null;
+  var btnPause = null;
+  var isPaused = false;
+
+  window.onload = function () {
+    context = document.getElementById('canvas').getContext('2d');
+    scoreEle = document.getElementById('score');
+    for (var i = 0; i < snakeCount; i++) {
+      snake[i] = {
+        x: (i + 1) * BLOCK_SIZE,
+        y: 3 * BLOCK_SIZE
+      };
+    }
+    drawSnake();
+    btnStart = document.getElementById('game-start');
+    btnStart.onclick = function () {
+      if (!isClicked) {
+        document.getElementById('score-hint').style.display = 'inline';
+        document.onkeydown = function (event) {
+          var e = event || window.event;
+          var which = e.which || e.keyCode;
+          switch (which) {
+            case 37:
+              if (dir !== 'left' && dir !== 'right')
+                dir = 'left';
+              break;
+            case 38:
+              if (dir !== 'up' && dir !== 'down')
+                dir = 'up';
+              break;
+            case 39:
+              if (dir !== 'right' && dir !== 'left')
+                dir = 'right';
+              break;
+            case 40:
+              if (dir !== 'down' && dir !== 'up')
+                dir = 'down';
+              break;
+          }
+          move();
+        };
+        createFood();
+        drawFood();
+        isClicked = true;
+      }
+      clearInterval(timer);
+      timer = setInterval(function () {
+        move();
+      }, 300);
+    };
+  };
+
+  btnPause = document.getElementById('game-pause'); // 暂停游戏
+  btnPause.onclick = function () {
+    if (isClicked && !isPaused) {
+      clearInterval(timer);
+      btnPause.innerText = '继续';
+      isPaused = true;
+    } else if (isClicked && isPaused) {
+      clearInterval(timer);
+      timer = setInterval(function () {
+        move();
+      }, 100);
+      btnPause.innerText = '暂停';
+      isPaused = false;
+    }
+  };
+
+  function drawSnake() {
+    context.clearRect(0, 0, BLOCK_SIZE * COLS, BLOCK_SIZE * ROWS);
+    for (var i = 0; i < snake.length; i++) {
+      context.beginPath();
+      context.fillStyle = 'red';
+      context.fillRect(snake[i].x, snake[i].y, BLOCK_SIZE, BLOCK_SIZE);
+      context.moveTo(snake[i].x, snake[i].y);
+      context.lineTo(snake[i].x + BLOCK_SIZE, snake[i].y);
+      context.lineTo(snake[i].x + BLOCK_SIZE, snake[i].y + BLOCK_SIZE);
+      context.lineTo(snake[i].x, snake[i].y + BLOCK_SIZE);
+      context.closePath();
+    }
+  }
+
+  function drawFood() {
+    context.beginPath();
+    context.fillStyle = 'blue';
+    context.fillRect(foodX, foodY, BLOCK_SIZE, BLOCK_SIZE);
+    context.moveTo(foodX, foodY);
+    context.lineTo(foodX + BLOCK_SIZE, foodY);
+    context.lineTo(foodX + BLOCK_SIZE, foodY + BLOCK_SIZE);
+    context.lineTo(foodX, foodY + BLOCK_SIZE);
+    context.closePath();
+  }
+
+  function move() {
+    switch (dir) {
+      case 'left':
+        snake.push({
+          x: snake[snakeCount - 1].x - BLOCK_SIZE,
+          y: snake[snakeCount - 1].y
+        });
+        break;
+      case 'up':
+        snake.push({
+          x: snake[snakeCount - 1].x,
+          y: snake[snakeCount - 1].y - BLOCK_SIZE
+        });
+        break;
+      case 'right':
+        snake.push({
+          x: snake[snakeCount - 1].x + BLOCK_SIZE,
+          y: snake[snakeCount - 1].y
+        });
+        break;
+      case'down':
+        snake.push({
+          x: snake[snakeCount - 1].x,
+          y: snake[snakeCount - 1].y + BLOCK_SIZE
+        });
+        break;
+    }
+    snake.shift();
+    isEat();
+    isDie();
+    drawSnake();
+    drawFood();
+  }
+
+  function isEat() {
+    if (snake[snakeCount - 1].x === foodX && snake[snakeCount - 1].y === foodY) {
+      scoreEle.innerHTML = (parseInt(scoreEle.innerHTML) + 10).toString();
+      createFood();
+      addSnake();
+    }
+  }
+
+  function addSnake() {
+    snakeCount++;
+    snake.unshift({
+      x: BLOCK_SIZE * COLS,
+      y: BLOCK_SIZE * ROWS
+    });
+  }
+
+  function createFood() {
+    var flag = true; // 一个标识位，true代表找到合适的食物坐标，false没找到
+    do {
+      foodX = Math.floor(Math.random() * (COLS - 1)) * BLOCK_SIZE;
+      foodY = Math.floor(Math.random() * (ROWS - 1)) * BLOCK_SIZE;
+      for (var i = 0; i < snakeCount; i++) {
+        // 与蛇身重合
+        if (foodX === snake[i].x && foodY === snake[i].y) {
+          flag = false;
+        }
+      }
+    } while (!flag);
+  }
+
+  function isDie() {
+    if (snake[snakeCount - 1].x === -20 || snake[snakeCount - 1].x === BLOCK_SIZE * COLS || snake[snakeCount - 1].y === -20 || snake[snakeCount - 1].y === BLOCK_SIZE * ROWS) {
+      gameOver();
+    }
+    for (var i = 0; i < snakeCount - 1; i++) {
+      if (snake[snakeCount - 1].x === snake[i].x && snake[snakeCount - 1].y === snake[i].y) {
+        gameOver();
+      }
+    }
+  }
+
+  // 游戏结束
+  function gameOver() {
+    alert('游戏结束，总得分：' + scoreEle.innerText);
+    clearInterval(timer);
+    location.reload();
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>贪吃蛇</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      width: 1000px;
+      height: 550px;
+      border: 1px solid #000;
+      /*css3实现水平垂直居中*/
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    #ground {
+      width: 1000px;
+      height: 500px;
+      background: #ccc;
+      position: relative;
+    }
+
+    .game-control {
+      width: 1000px;
+      height: 50px;
+      line-height: 50px;
+      box-sizing: border-box;
+      padding: 0 50px;
+    }
+
+    .hint {
+      float: left;
+    }
+
+    #score-hint {
+      margin: 0 20px;
+      display: none;
+    }
+
+    .game-buttons {
+      float: right;
+    }
+
+    .block {
+      width: 20px;
+      height: 20px;
+      position: absolute;
+    }
+
+    .snake {
+      background: red;
+      top: 60px;
+      z-index: 1;
+    }
+
+    .food {
+      background: blue;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div id="ground"></div>
+  <div class="game-control">
+    <div class="hint">
+      原生JavaScript 贪吃蛇 By FX <span id="score-hint">当前得分：<span id="score">0</span></span>
+    </div>
+    <div class="game-buttons">
+      <button id="game-start">开始</button>
+      <button id="game-pause">暂停</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  var ground = document.getElementById('ground'); // 得到草场对象
+  var snakeBody = []; // 初始化蛇，创建蛇的数组
+  for (var i = 0; i < 3; i++) {
+    var bodyDiv = document.createElement('div'); // 创建蛇身DIV
+    bodyDiv.className = 'block snake'; // 为蛇添加基本样式
+    bodyDiv.style.left = (3 - i) * 20 + 'px';
+    ground.appendChild(bodyDiv); // 将蛇身插入到ground中
+    snakeBody.push(bodyDiv);
+  }
+  var btnStart = document.getElementById('game-start'); // 开始游戏
+  var timer, isClicked = false; // bClicked个标识位，用来代表按钮是否被点击，false表示未被点击，true反之
+  var dir = 'right'; // 蛇运动方向
+  var food;
+  var scoreEle = document.getElementById('score');
+  btnStart.onclick = function () {
+    if (!isClicked) {
+      document.getElementById('score-hint').style.display = 'inline';
+      document.onkeydown = function (e) {
+        e = e || window.event; // 能力检测，兼容处理
+        var which = e.which || e.keyCode;
+        switch (which) {
+          case 37:
+            if (dir !== 'left' && dir !== 'right')
+              dir = 'left';
+            break;
+          case 38:
+            if (dir !== 'up' && dir !== 'down')
+              dir = 'up';
+            break;
+          case 39:
+            if (dir !== 'right' && dir !== 'left')
+              dir = 'right';
+            break;
+          case 40:
+            if (dir !== 'down' && dir !== 'up')
+              dir = 'down';
+            break;
+        }
+        move();
+      };
+      food = createFood();
+      isClicked = true;
+    }
+    clearInterval(timer);
+    timer = setInterval(function () {
+      move();
+    }, 300);
+  };
+  var isPaused = false;
+  var btnPause = document.getElementById('game-pause'); // 暂停游戏
+  btnPause.onclick = function () {
+    if (isClicked && !isPaused) {
+      clearInterval(timer);
+      btnPause.innerText = '继续';
+      isPaused = true;
+    } else if (isClicked && isPaused) {
+      clearInterval(timer);
+      timer = setInterval(function () {
+        move();
+      }, 300);
+      btnPause.innerText = '暂停';
+      isPaused = false;
+    }
+  };
+
+  // 蛇移动
+  function move() {
+    var snakeHead = snakeBody[0]; // 取出蛇头
+    var nextPos = { // 蛇头的下一个目标点, offsetLeft用来获取当前left值
+      left: snakeHead.offsetLeft,
+      top: snakeHead.offsetTop
+    };
+    switch (dir) {
+      case 'left':
+        nextPos.left -= 20;
+        break;
+      case 'up':
+        nextPos.top -= 20;
+        break;
+      case 'right':
+        nextPos.left += 20;
+        break;
+      case 'down':
+        nextPos.top += 20;
+        break;
+    }
+    for (var i = 0; i < snakeBody.length; i++) {
+      var currPos = { // 保存当前位置
+        left: snakeBody[i].offsetLeft,
+        top: snakeBody[i].offsetTop
+      };
+      snakeBody[i].style.left = nextPos.left + 'px';
+      snakeBody[i].style.top = nextPos.top + 'px';
+      nextPos = currPos; // 将下一个目标点的值设置成当前值
+    }
+    // 吃食物
+    if (snakeHead.offsetLeft === food.offsetLeft && snakeHead.offsetTop === food.offsetTop) {
+      nextPos = { // 重新获取当前蛇头位置
+        left: snakeHead.offsetLeft,
+        top: snakeHead.offsetTop
+      };
+      switch (dir) {
+        case 'left':
+          nextPos.left -= 20;
+          break;
+        case 'up':
+          nextPos.top -= 20;
+          break;
+        case 'right':
+          nextPos.left += 20;
+          break;
+        case 'down':
+          nextPos.top += 20;
+          break;
+      }
+      snakeHead.style.left = nextPos.left + 'px'; // 让蛇头迅速向下一目标位置定位
+      snakeHead.style.top = nextPos.top + 'px';
+      food.className = 'block snake';
+      snakeBody.splice(1, 0, food); // 将食物插入到蛇头后面位置
+      scoreEle.innerText = (parseInt(scoreEle.innerText) + 10).toString();
+      food = createFood(); // 重新生成食物
+    }
+    // 撞墙
+    if (snakeHead.offsetLeft > 980 || snakeHead.offsetLeft < 0 || snakeHead.offsetTop < 0 || snakeHead.offsetTop > 480) {
+      gameOver();
+    }
+    // 吃身体
+    for (var j = 1; j < snakeBody.length; j++) {
+      if (snakeHead.offsetLeft === snakeBody[j].offsetLeft && snakeHead.offsetTop === snakeBody[j].offsetTop) {
+        gameOver();
+      }
+    }
+  }
+
+  // 游戏结束
+  function gameOver() {
+    alert('游戏结束，总得分：' + scoreEle.innerText);
+    clearInterval(timer);
+    location.reload();
+  }
+
+  // 生成食物
+  function createFood() {
+    var flag = true; // 一个标识位，true代表找到合适的食物坐标，false没找到
+    do {
+      var left = Math.ceil(Math.random() * 49) * 20, top = Math.ceil(Math.random() * 24) * 20;
+      for (var i = 0; i < snakeBody.length; i++) {
+        // 与蛇身重合
+        if (left === snakeBody[i].offsetLeft && top === snakeBody[i].offsetTop) {
+          flag = false;
+        }
+      }
+    } while (!flag);
+    var foodDiv = document.createElement('div');
+    foodDiv.className = 'block food';
+    foodDiv.style.left = left + 'px';
+    foodDiv.style.top = top + 'px';
+    ground.appendChild(foodDiv);
+    return foodDiv;
+  }
+
+</script>
+</body>
+</html>
